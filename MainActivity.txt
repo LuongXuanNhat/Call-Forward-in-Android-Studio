@@ -1,0 +1,125 @@
+package com.example.phonecall;
+import android.net.Uri;
+import android.os.Bundle;
+import android.telephony.PhoneStateListener;
+import android.telephony.TelephonyManager;
+import android.view.View;
+import android.widget.Button;
+import android.app.Activity;
+import android.content.Context;
+import android.content.Intent;
+
+public class CallForwarding extends Activity
+{
+    Button buttonCallForwardOn;
+    Button buttonCallForwardOff;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState)
+    {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+
+        // Nút bật chuyển tiếp cuộc gọi
+        buttonCallForwardOn = (Button) findViewById(R.id.buttonCallForwardOn);
+
+        // Lắng nghe bật chuyển tiếp
+        buttonCallForwardOn.setOnClickListener(new View.OnClickListener()
+        {
+            public void onClick(View v)
+            {
+                // Số điện thoại chuyển tiếp cuộc gọi
+                callforward("*21*0902566598#");
+            }
+        });
+
+        // Nút tắt chuyển tiếp cuộc gọi
+        buttonCallForwardOff = (Button) findViewById(R.id.buttonCallForwardOff);
+
+        // Lắng nghe tắt chuyển tiếp
+        buttonCallForwardOff.setOnClickListener(new View.OnClickListener()
+        {
+            public void onClick(View v)
+            {
+                callforward("#21#");
+            }
+        });
+    }
+
+    // Hàm xử lý
+    private void callforward(String callForwardString)
+    {
+        // Tạo đối tượng lắng nghe trạng thái PhoneCall
+        PhoneCallListener phoneListener = new PhoneCallListener();
+
+        // Truy xuất các tệp của hệ thống điện thoại, để xứ lý các tính năng
+        TelephonyManager telephonyManager = (TelephonyManager)
+                this.getSystemService(Context.TELEPHONY_SERVICE);
+
+        // Nhận thông báo về những thay đổi trong điện thoại được chỉ định
+        telephonyManager.listen(phoneListener, PhoneStateListener.LISTEN_CALL_STATE);
+
+        // Gọi điện
+        Intent intentCallForward = new Intent(Intent.ACTION_CALL);
+
+        // Truyền số điện thoại , thực hiện mã hóa
+        Uri mmiCode = Uri.fromParts("tel", callForwardString, "#");
+
+        // Lưu số
+        intentCallForward.setData(mmiCode);
+
+        // thực hiện gọi điện
+        startActivity(intentCallForward);
+    }
+
+    // Kế thừa PSL để lắng nghe những thay đổi trang thái điện thoại
+    private class PhoneCallListener extends PhoneStateListener
+    {
+        private boolean isPhoneCalling = false;
+
+        // Kế thừa
+        @Override
+        public void onCallStateChanged(int state, String incomingNumber)
+        {
+            // Các trạng thái cuộc gọi
+
+            if (TelephonyManager.CALL_STATE_RINGING == state)
+            {
+                // Đổ chuông khi 1 cuộc gọi mới đến
+
+            }
+
+            if (TelephonyManager.CALL_STATE_OFFHOOK == state)
+            {
+                // Trạng thái tắt máy .Có ít nhất 1 cuộc gọi đang quay số, đang chờ,...
+                isPhoneCalling = true;
+            }
+
+            // Trạng thái bình thường
+            if (TelephonyManager.CALL_STATE_IDLE == state)
+            {
+
+                if (isPhoneCalling)
+                {
+                    // Khởi động lại app
+                    Intent i = getBaseContext().getPackageManager()
+                            .getLaunchIntentForPackage(getBaseContext().getPackageName());
+
+                    i.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                    startActivity(i);
+                    isPhoneCalling = false;
+                }
+            }
+        }
+    }
+}
+
+
+
+
+
+
+
+
+
